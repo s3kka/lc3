@@ -211,7 +211,8 @@ void lc3_OpBR(uint16_t instr)
 {
     uint16_t cond = LC3_GET_BITS(instr, 9, 3);
 
-    if (cond == 0 || cond & s_state.reg[LC3_REG_COND]) {
+    // unconditial branching is done with all bits set to 1
+    if (cond & s_state.reg[LC3_REG_COND]) {
         uint16_t pc_offset9 = lc3_SignExtend(LC3_GET_BITS(instr, 0, 9), 9);    
         s_state.reg[LC3_REG_PC] += pc_offset9;
     }
