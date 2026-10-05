@@ -173,6 +173,17 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+/*  Implements ADD.
+
+    DR: destination register, bits 11:9
+    SR1: first source register, bits 8:6
+    Bit 5: immediate mode flag
+
+    If bit 5 is 0, then SR2 is the second source register, bits 2:0;
+    If bit 5 is 1, then imm5 is the 5-bit signed immediate, bits 4:0.
+
+    Updates condition flags.                                        
+*/
 void lc3_OpADD(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -190,6 +201,17 @@ void lc3_OpADD(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements AND.
+
+    DR: destination register, bits 11:9
+    SR1: first source register, bits 8:6
+    Bit 5: immediate mode flag
+
+    If bit 5 is 0, then SR2 is the second source register, bits 2:0;
+    If bit 5 is 1, then imm5 is the 5-bit signed immediate, bits 4:0.
+    
+    Updates condition flags.                                        
+*/
 void lc3_OpAND(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -207,6 +229,14 @@ void lc3_OpAND(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements BR (conditional branch).
+
+    Cond: condition mask, bits 11:9, format of N:_:Z:P
+    PCoffset9: 9-bit signed offset, bits 8:0.
+
+    If the mask contains multiple condition bits, the 
+    branch is taken if any matching condition is currently set.
+*/
 void lc3_OpBR(uint16_t instr)
 {
     uint16_t cond = LC3_GET_BITS(instr, 9, 3);
@@ -218,6 +248,12 @@ void lc3_OpBR(uint16_t instr)
     }
 }
 
+/*  Implements JMP.
+
+    SR1: base register, bits 8:6.
+
+    Also implements RET, since RET is just JMP R7.
+*/
 void lc3_OpJMP(uint16_t instr)
 {
     uint16_t sr1 = LC3_GET_BITS(instr, 6, 3); 
@@ -226,6 +262,15 @@ void lc3_OpJMP(uint16_t instr)
     s_state.reg[LC3_REG_PC] = s_state.reg[sr1]; 
 }
 
+/*  Implements JSR and JSRR.
+
+    Bit 11: mode selector
+
+    If bit 11 is 1, then PCoffset11 is the 11-bit signed offset, bits 10:0;
+    If bit 11 is 0, then SR1 is the source register, bits 8:6
+
+    Stores the return address in R7.
+*/
 void lc3_OpJSR(uint16_t instr)
 {
     uint16_t bit11 = LC3_GET_BITS(instr, 11, 1);
@@ -240,6 +285,13 @@ void lc3_OpJSR(uint16_t instr)
     }
 }
 
+/*  Implements LD (load).
+
+    DR: destination register, bits 11:9
+    PCoffset9: 9-bit signed offset, bits 8:0
+
+    Updates condition flags.
+*/
 void lc3_OpLD(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -250,6 +302,13 @@ void lc3_OpLD(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements LDI (load indrect).
+
+    DR: destination register, bits 11:9
+    PCoffset9: 9-bit signed offset, bits 8:0
+
+    Updates condition flags.
+*/
 void lc3_OpLDI(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -260,6 +319,14 @@ void lc3_OpLDI(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements LDR (load register).
+
+    DR: destination register, bits 11:9
+    SR1: source register, bits 8:6
+    offset6: 6-bit signed offset, bits 5:0
+
+    Updates condition flags.
+*/
 void lc3_OpLDR(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -271,6 +338,13 @@ void lc3_OpLDR(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements LEA (load effective address).
+
+    DR: destination register, bits 11:9
+    PCoffset9: 9-bit signed offset, bits 8:0
+
+    Updates condition flags.
+*/
 void lc3_OpLEA(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -281,6 +355,13 @@ void lc3_OpLEA(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/*  Implements NOT.
+
+    DR: destination register, bits 11:9
+    SR1: source register, bits 8:6
+
+    Updates condition flags.
+*/
 void lc3_OpNOT(uint16_t instr)
 {
     uint16_t dr = LC3_GET_BITS(instr, 9, 3);
@@ -291,12 +372,18 @@ void lc3_OpNOT(uint16_t instr)
     lc3_UpdateCond(dr);
 }
 
+/* Not implemented */
 void lc3_OpRTI(uint16_t instr)
 {
     (void)instr;
     lc3_Log("lc3: [warn] LC3_OPCODE_RTI not implemented! instruction skipped \n");
 }
 
+/*  Implements ST (store).
+
+    SR: source register, bits 11:9
+    PCoffset9: 9-bit signed offset, bits 8:0
+*/
 void lc3_OpST(uint16_t instr)
 {
     uint16_t sr = LC3_GET_BITS(instr, 9, 3);
@@ -305,6 +392,11 @@ void lc3_OpST(uint16_t instr)
     lc3_MemSet(s_state.reg[LC3_REG_PC] + pc_offset9, s_state.reg[sr]);
 }
 
+/*  Implements STI (store indirect).
+
+    SR: source register, bits 11:9
+    PCoffset9: 9-bit signed offset, bits 8:0
+*/
 void lc3_OpSTI(uint16_t instr)
 {
     uint16_t sr = LC3_GET_BITS(instr, 9, 3);
@@ -313,6 +405,12 @@ void lc3_OpSTI(uint16_t instr)
     lc3_MemSet(lc3_MemRead(s_state.reg[LC3_REG_PC] + pc_offset9), s_state.reg[sr]);
 }
 
+/*  Implements STR (store register).
+
+    SR: source register, bits 11:9
+    SR1: base register, bits 8:6
+    offset6: 6-bit signed offset, bits 5:0
+*/
 void lc3_OpSTR(uint16_t instr)
 {
     uint16_t sr = LC3_GET_BITS(instr, 9, 3);
@@ -322,6 +420,23 @@ void lc3_OpSTR(uint16_t instr)
     lc3_MemSet(s_state.reg[sr1] + offset6, s_state.reg[sr]);
 }
 
+/*  Implements TRAP.
+
+    trapvect8: trap vector, bits 7:0
+
+    Saves PC to R7 before handling the trap.
+    Supported trap codes:
+    - GETC:     read a character from keyboard, updates condition flags;
+    - OUT:      write R0 as a character to stdout, flushing;
+    - PUTS:     write a zero-terminated 16-bit word string starting at mem[R0];
+    - IN:       read a character from keyboard, echo it, store in R0, updates 
+                condition flags;
+    - PUTSP:    write a packed byte string starting at mem[R0] in low-byte/high-byte 
+                order, until a zero word;
+    - HALT:     Stop the VM;
+
+    Unknown trap vectors are logged and skipped.
+*/
 void lc3_OpTRAP(uint16_t instr)
 {
     uint16_t trapvect8 = LC3_GET_BITS(instr, 0, 8);
@@ -373,10 +488,14 @@ void lc3_OpTRAP(uint16_t instr)
         case LC3_TRAP_HALT: {
             s_state.is_running = 0;
         } break;
-        default: lc3_Log("lc3: [warn] unknown trapcode!"); break;
+        default: lc3_Log("lc3: [warn] unknown trapcode! trap code skipped"); break;
     }
 }
 
+/*  Handle an illegal RES (reserved) instruction.
+
+    Logs a warning and skips the instruction.
+*/
 void lc3_OpRES(uint16_t instr)
 {
     (void)instr;
@@ -452,6 +571,11 @@ void lc3_MemSet(uint16_t address, uint16_t value)
 {
     s_state.memory[address] = value;
 }
+
+
+/* OS specific terminal managing */
+
+// i wish there was a simpler way...
 
 #if _WIN32
     /* windows only */
